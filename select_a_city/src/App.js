@@ -1,49 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import axios from "axios";
 const url = 'https://wft-geo-db.p.rapidapi.com/v1/geo/cities';
 
+
+
 function App() {
   const [filterCityText, setFilterCityText] = useState('');
-  const [APIcities, setAPIcities] = useState([]);
-  const optionsForFilterText = (text) => {
-    const options = {
-      method: 'GET',
-      url: `${url}`,
-      headers: {
-        'x-rapidapi-key': `${process.env.REACT_APP_X_RAPIDAPI_KEY}`,
-        'x-rapidapi-host': 'wft-geo-db.p.rapidapi.com'
-      },
-      params: {
-        countryIds: 'US',
-        namePrefix: `${text}`
+  const [cities, setCities] = useState([]);
+
+  useEffect(() => {
+    const getCities = async () => {
+      const options = {
+          method: 'GET',
+          url: `${url}`,
+          headers: {
+            'x-rapidapi-key': `${process.env.REACT_APP_X_RAPIDAPI_KEY}`,
+            'x-rapidapi-host': 'wft-geo-db.p.rapidapi.com'
+          },
+          params: {
+            countryIds: 'US',
+            namePrefix: `${filterCityText}`
+          }
+      };
+      try{
+        const response = await axios.request(options);
+        setCities(response.data.data);
+      }catch(e){
+        console.error('error occured ==> ', e);
+        alert('error occured, please check browser console');
       }
-    };
-    return options;
-  };
+    }
+    if(filterCityText){
+      getCities();
+    }else{
+      setCities([]);
+    }
+    
+  }, [filterCityText])
+  
   const setFilter = (event) => {
     const text = event.target.value;
     setFilterCityText(text);
-    const options = optionsForFilterText(text);
-    if (filterCityText !== '') {
-      axios.request(options)
-        .then(function (response) {
-          console.log(`API call made ${Date()}`);
-          const [city1, city2, city3, city4, city5] =
-            [response.data.data[0].city + ' ' + response.data.data[0].regionCode,
-            response.data.data[1].city + ' ' + response.data.data[1].regionCode,
-            response.data.data[2].city + ' ' + response.data.data[2].regionCode,
-            response.data.data[3].city + ' ' + response.data.data[3].regionCode,
-            response.data.data[4].city + ' ' + response.data.data[4].regionCode
-            ]; // TODO Cleanup
-          setAPIcities([city1, city2, city3, city4, city5])
-        })
-        .catch(function (error) {
-          console.error(error);
-        })
-    };
-    if (filterCityText === '') setAPIcities([]);
-    console.log(APIcities);
   }
   return (
     <div className="App">
@@ -52,7 +50,7 @@ function App() {
         <input name="city" value={filterCityText} onChange={setFilter} />
         Searched Cities<br />
         <div id="cities">
-          {APIcities.map((city, idx) => <div key={idx}> {city} </div>)}
+          {cities.map(({city, id}) => <div key={id}> {city} </div>)}
         </div>
       </header>
     </div>
